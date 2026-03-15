@@ -1,0 +1,63 @@
+name: Bug Report
+description: Report a problem with the minimap mod
+title: "[Bug] "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to report a bug! Please fill out what you can below. Don't worry if you can't answer everything -- any info helps.
+
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: Describe the problem you ran into.
+      placeholder: "Example: The minimap disappeared after entering Chapter 2."
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: What were you doing when this happened? If you're not sure, just describe the situation.
+      placeholder: |
+        1. Started a new game
+        2. Entered the second area
+        3. Minimap was gone
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: What did you expect to happen?
+      placeholder: "Example: The minimap should still be visible."
+
+  - type: input
+    id: mod-version
+    attributes:
+      label: Mod version
+      description: Which version of the minimap mod are you using? (Check the zip filename or your config file)
+      placeholder: "Example: 1.0.2"
+
+  - type: input
+    id: game-version
+    attributes:
+      label: Game version
+      description: Which version of Tainted Grail are you running? (Optional)
+      placeholder: "Example: 1.52"
+
+  - type: textarea
+    id: log
+    attributes:
+      label: Log file (if available)
+      description: |
+        If you're comfortable with it, paste any relevant errors from the BepInEx log.
+        The log file is at: `BepInEx/LogOutput.log` in your game folder.
+      render: text
+
+  - type: textarea
+    id: extra
+    attributes:
+      label: Anything else?
+      description: Screenshots, other mods you're running, or anything else that might help.

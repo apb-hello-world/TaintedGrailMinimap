@@ -17,3 +17,4 @@ lib/
 CLAUDE*
 .ai*
 *.md
+!.github/copilot-instructions.md
