@@ -2,6 +2,18 @@ bin/
 obj/
 lib/
 *.dll
+!dist/*.dll
 *.pdb
+*.zip
 *.user
+*.suo
 .vs/
+
+# AI tools
+.sisyphus*
+.opencode*
+.claude*
+.cursor*
+CLAUDE*
+.ai*
+*.md
