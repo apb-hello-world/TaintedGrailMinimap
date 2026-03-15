@@ -54,5 +54,60 @@ namespace TaintedGrailMinimap
             float originV = playerUV.y - uvH * 0.5f;
             return new Rect(originU, originV, uvW, uvH);
         }
+
+        /// <summary>
+        /// Converts a world-space marker position to a screen-space offset on the minimap,
+        /// applying zoom, rotation, scale, and edge clamping. Shared by quest markers and
+        /// the custom compass marker.
+        /// </summary>
+        /// <param name="markerWorldPos">World position of the marker.</param>
+        /// <param name="playerUV">Player's normalized UV position on the map.</param>
+        /// <param name="mapBounds">Map bounds rect for coordinate conversion.</param>
+        /// <param name="zoom">Current zoom level.</param>
+        /// <param name="minimapSize">Minimap diameter in pixels.</param>
+        /// <param name="rotAngle">Map rotation angle in degrees.</param>
+        /// <param name="mapScale">Scale multiplier (1.0 for fixed, 1.45 for rotating).</param>
+        /// <param name="edgeLimit">Max distance from center before clamping.</param>
+        /// <param name="wasClamped">True if the marker was clamped to the edge.</param>
+        /// <returns>Screen-space offset from minimap center.</returns>
+        public static Vector2 WorldToMinimapOffset(
+            Vector3 markerWorldPos, float2 playerUV, Rect mapBounds,
+            float zoom, float minimapSize, float rotAngle, float mapScale,
+            float edgeLimit, out bool wasClamped)
+        {
+            float2 markerUV = WorldToNormalizedMapPos(markerWorldPos, mapBounds);
+
+            float scaledU = (markerUV.x - playerUV.x) * zoom * minimapSize;
+            float scaledV = (markerUV.y - playerUV.y) * zoom * minimapSize;
+
+            float rotU, rotV;
+            if (rotAngle != 0f)
+            {
+                float radians = rotAngle * Mathf.Deg2Rad;
+                float cosR = Mathf.Cos(radians);
+                float sinR = Mathf.Sin(radians);
+                rotU = scaledU * cosR - scaledV * sinR;
+                rotV = scaledU * sinR + scaledV * cosR;
+            }
+            else
+            {
+                rotU = scaledU;
+                rotV = scaledV;
+            }
+
+            rotU *= mapScale;
+            rotV *= mapScale;
+
+            float dist = Mathf.Sqrt(rotU * rotU + rotV * rotV);
+            wasClamped = dist > edgeLimit;
+            if (wasClamped && dist > 0.01f)
+            {
+                float clampFactor = edgeLimit / dist;
+                rotU *= clampFactor;
+                rotV *= clampFactor;
+            }
+
+            return new Vector2(rotU, rotV);
+        }
     }
 }

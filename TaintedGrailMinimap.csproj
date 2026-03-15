@@ -19,6 +19,7 @@
     <Compile Include="MinimapConfig.cs" />
     <Compile Include="MinimapBehaviour.cs" />
     <Compile Include="MinimapRenderer.cs" />
+    <Compile Include="MinimapTextureFactory.cs" />
   </ItemGroup>
 
   <ItemGroup>

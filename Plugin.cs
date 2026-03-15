@@ -3,7 +3,7 @@ using UnityEngine;
 
 namespace TaintedGrailMinimap
 {
-    [BepInPlugin("com.minimap.taintedgrail", "MiniMap", "1.0.0")]
+    [BepInPlugin("com.minimap.taintedgrail", "MiniMap", "1.0.2")]
     public class Plugin : BaseUnityPlugin
     {
         private void Awake()
