@@ -9,6 +9,7 @@ namespace TaintedGrailMinimap
         private void Awake()
         {
             MinimapConfig.Init(Config);
+            MinimapBehaviour.Log = Logger;
             var minimapObj = new GameObject("TaintedGrailMinimap");
             minimapObj.AddComponent<MinimapBehaviour>();
             DontDestroyOnLoad(minimapObj);
