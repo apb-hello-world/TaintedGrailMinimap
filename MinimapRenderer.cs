@@ -36,6 +36,8 @@ namespace TaintedGrailMinimap
 
         /// <summary>
         /// Computes a UV rect for the minimap RawImage, centered on playerUV with zoom and aspect correction.
+        /// For a non-square texture displayed in a square minimap, we adjust the UV window so that
+        /// equal world distances appear equal on screen: uvW * texWidth must equal uvH * texHeight.
         /// </summary>
         public static Rect ComputeUVRect(float2 playerUV, float zoom, float mapAspect)
         {
@@ -44,11 +46,13 @@ namespace TaintedGrailMinimap
             float uvH = invZoom;
             if (mapAspect > 1f)
             {
-                uvW = invZoom * mapAspect;
+                // Wide texture: show less UV width so horizontal isn't compressed
+                uvW = invZoom / mapAspect;
             }
             else if (mapAspect < 1f)
             {
-                uvH = invZoom / mapAspect;
+                // Tall texture: show less UV height so vertical isn't compressed
+                uvH = invZoom * mapAspect;
             }
             float originU = playerUV.x - uvW * 0.5f;
             float originV = playerUV.y - uvH * 0.5f;
@@ -57,14 +61,15 @@ namespace TaintedGrailMinimap
 
         /// <summary>
         /// Converts a world-space marker position to a screen-space offset on the minimap,
-        /// applying zoom, rotation, scale, and edge clamping. Shared by quest markers and
-        /// the custom compass marker.
+        /// applying zoom, aspect ratio correction, rotation, scale, and edge clamping.
+        /// Shared by quest markers and the custom compass marker.
         /// </summary>
         /// <param name="markerWorldPos">World position of the marker.</param>
         /// <param name="playerUV">Player's normalized UV position on the map.</param>
         /// <param name="mapBounds">Map bounds rect for coordinate conversion.</param>
         /// <param name="zoom">Current zoom level.</param>
         /// <param name="minimapSize">Minimap diameter in pixels.</param>
+        /// <param name="mapAspect">Map texture aspect ratio (width/height).</param>
         /// <param name="rotAngle">Map rotation angle in degrees.</param>
         /// <param name="mapScale">Scale multiplier (1.0 for fixed, 1.45 for rotating).</param>
         /// <param name="edgeLimit">Max distance from center before clamping.</param>
@@ -72,13 +77,32 @@ namespace TaintedGrailMinimap
         /// <returns>Screen-space offset from minimap center.</returns>
         public static Vector2 WorldToMinimapOffset(
             Vector3 markerWorldPos, float2 playerUV, Rect mapBounds,
-            float zoom, float minimapSize, float rotAngle, float mapScale,
+            float zoom, float minimapSize, float mapAspect, float rotAngle, float mapScale,
             float edgeLimit, out bool wasClamped)
         {
             float2 markerUV = WorldToNormalizedMapPos(markerWorldPos, mapBounds);
 
-            float scaledU = (markerUV.x - playerUV.x) * zoom * minimapSize;
-            float scaledV = (markerUV.y - playerUV.y) * zoom * minimapSize;
+            // Convert UV deltas to pixel offsets, compensating for aspect ratio.
+            // The visible UV region is (invZoom / max(mapAspect,1)) wide and
+            // (invZoom * min(mapAspect,1)) tall, displayed in minimapSize pixels.
+            // pixelX = deltaU * minimapSize / uvW = deltaU * zoom * minimapSize * mapAspect  (wide)
+            // pixelY = deltaV * minimapSize / uvH = deltaV * zoom * minimapSize / mapAspect  (tall)
+            float scaledU, scaledV;
+            if (mapAspect > 1f)
+            {
+                scaledU = (markerUV.x - playerUV.x) * zoom * minimapSize * mapAspect;
+                scaledV = (markerUV.y - playerUV.y) * zoom * minimapSize;
+            }
+            else if (mapAspect < 1f)
+            {
+                scaledU = (markerUV.x - playerUV.x) * zoom * minimapSize;
+                scaledV = (markerUV.y - playerUV.y) * zoom * minimapSize / mapAspect;
+            }
+            else
+            {
+                scaledU = (markerUV.x - playerUV.x) * zoom * minimapSize;
+                scaledV = (markerUV.y - playerUV.y) * zoom * minimapSize;
+            }
 
             float rotU, rotV;
             if (rotAngle != 0f)

@@ -5,6 +5,7 @@ using UnityEngine.UI;
 using Unity.Mathematics;
 using Awaken.TG.Main.UI;
 using Awaken.TG.Main.Heroes;
+using Awaken.TG.Main.Heroes.CharacterSheet;
 using Awaken.TG.Main.Cameras;
 using Awaken.TG.Main.FastTravel;
 using Awaken.TG.Main.Locations;
@@ -13,12 +14,16 @@ using Awaken.TG.Main.Scenes.SceneConstructors;
 using Awaken.TG.MVC;
 using Awaken.TG.MVC.Domains;
 using Awaken.TG.Assets;
+using BepInEx.Logging;
 using TMPro;
 
 namespace TaintedGrailMinimap
 {
     public class MinimapBehaviour : MonoBehaviour
     {
+        // Logger (set by Plugin on creation)
+        internal static ManualLogSource Log;
+
         // Layout constants
         private const float RotationMapScale = 1.45f;
         private const float MarkerEdgePadding = 6f;
@@ -195,8 +200,8 @@ namespace TaintedGrailMinimap
                 }
             }
 
-            UpdateQuestMarkers(playerUV, zoom, rotAngle, mapScale);
-            UpdateCustomMarker(playerUV, zoom, rotAngle, mapScale);
+            UpdateQuestMarkers(playerUV, zoom, _mapAspect, rotAngle, mapScale);
+            UpdateCustomMarker(playerUV, zoom, _mapAspect, rotAngle, mapScale);
             UpdateCardinalLabels(rotAngle);
         }
 
@@ -329,8 +334,13 @@ namespace TaintedGrailMinimap
             }
 
             _mapTexture = result.texture;
-            _mapAspect = 1f; // Force 1:1 aspect ratio to fix stretching in non-square maps
+            _mapAspect = (result.texture.width > 0 && result.texture.height > 0)
+                ? (float)result.texture.width / result.texture.height
+                : 1f;
             _mapReady = true;
+
+            Log?.LogInfo($"Map loaded — texture: {result.texture.width}x{result.texture.height}, " +
+                         $"textureAR: {_mapAspect:F3}, boundsAR: {_mapBoundsRect.width / _mapBoundsRect.height:F3}");
         }
 
         private void ReleaseSprite()
@@ -363,7 +373,7 @@ namespace TaintedGrailMinimap
         // Marker updates
         // -------------------------------------------------------------------
 
-        private void UpdateQuestMarkers(float2 playerUV, float zoom, float rotAngle, float mapScale)
+        private void UpdateQuestMarkers(float2 playerUV, float zoom, float mapAspect, float rotAngle, float mapScale)
         {
             float edgeLimit = MinimapConfig.Size.Value / 2f - MarkerEdgePadding;
             int markerIdx = 0;
@@ -378,7 +388,7 @@ namespace TaintedGrailMinimap
                     bool clamped;
                     Vector2 offset = MinimapRenderer.WorldToMinimapOffset(
                         _questMarkerBuffer[i].Position, playerUV, _mapBoundsRect,
-                        zoom, MinimapConfig.Size.Value, rotAngle, mapScale,
+                        zoom, MinimapConfig.Size.Value, mapAspect, rotAngle, mapScale,
                         edgeLimit, out clamped);
 
                     _markerTransforms[markerIdx].anchoredPosition = offset;
@@ -399,7 +409,7 @@ namespace TaintedGrailMinimap
             }
         }
 
-        private void UpdateCustomMarker(float2 playerUV, float zoom, float rotAngle, float mapScale)
+        private void UpdateCustomMarker(float2 playerUV, float zoom, float mapAspect, float rotAngle, float mapScale)
         {
             if (_customMarkerImage == null) return;
 
@@ -415,7 +425,7 @@ namespace TaintedGrailMinimap
             bool clamped;
             Vector2 offset = MinimapRenderer.WorldToMinimapOffset(
                 loc.Coords, playerUV, _mapBoundsRect,
-                zoom, MinimapConfig.Size.Value, rotAngle, mapScale,
+                zoom, MinimapConfig.Size.Value, mapAspect, rotAngle, mapScale,
                 edgeLimit, out clamped);
 
             _customMarkerTransform.anchoredPosition = offset;
